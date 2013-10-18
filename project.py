@@ -539,6 +539,8 @@ class Project(object):
     else:
       self.revisionId = revisionId
 
+    self.lastRevisionDate = None
+
     self.rebase = rebase
     self.groups = groups
     self.sync_c = sync_c
@@ -1054,6 +1056,12 @@ class Project(object):
 
     rem = self.GetRemote(self.remote.name)
     rev = rem.ToLocal(self.revisionExpr)
+
+    if self.lastRevisionDate:
+      return self.bare_git.rev_list(
+        '-n', '1',
+        '--before=' + self.lastRevisionDate,
+        rev)[0]
 
     if all_refs is not None and rev in all_refs:
       return all_refs[rev]

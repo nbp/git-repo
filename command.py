@@ -126,11 +126,12 @@ class Command(object):
         pass
     return project
 
-  def GetProjects(self, args, missing_ok=False, submodules_ok=False):
+  def GetProjects(self, args, missing_ok=False, submodules_ok=False, ignore_filter_out=False):
     """A list of projects that match the arguments.
     """
     all_projects = self.manifest.projects
     result = []
+    negateSymb = '/'
 
     mp = self.manifest.manifestProject
 
@@ -139,9 +140,22 @@ class Command(object):
       groups = 'default,platform-' + platform.system().lower()
     groups = [x for x in re.split(r'[,\s]+', groups) if x]
 
-    if not args:
+    allArgFilterOut = True
+    if args:
+      for arg in args:
+        if len(arg) < 1 and arg[0] != negateSymb:
+          allArgFilterOut = False
+          break
+
+    if allArgFilterOut:
       all_projects_list = list(all_projects.values())
       derived_projects = {}
+
+      if args and not ignore_filter_out:
+        all_projects_list = [p for p in all_projects_list
+                             if (negateSymb + p.relpath) not in args]
+        # print "GetProjects: %s\n" % (', '.join([p.relpath for p in all_projects_list]))
+
       for project in all_projects_list:
         if submodules_ok or project.sync_s:
           derived_projects.update((p.name, p)

@@ -203,6 +203,12 @@ later is required to fix a server side protocol bug.
     p.add_option('--no-tags',
                  dest='no_tags', action='store_true',
                  help="don't fetch tags")
+    p.add_option('--date',
+                 dest='rev_date', action='store',
+                 help='checkout a revision from a precise date')
+    p.add_option('--repo-date',
+                 dest='repo_date', action='store',
+                 help='checkout a revision corresponding to the last update of a repo')
     if show_smart:
       p.add_option('-s', '--smart-sync',
                    dest='smart_sync', action='store_true',
@@ -647,6 +653,24 @@ later is required to fix a server side protocol bug.
 
     if self.UpdateProjectList():
       sys.exit(1)
+
+    # Take the reference repository to find the corresponding date of it.
+    if opt.repo_date:
+      for p in self.GetProjects(args,
+                                missing_ok=True,
+                                submodules_ok=False,
+                                ignore_filter_out=True):
+        if p.relpath == opt.repo_date:
+          print ("Syncing on checkouted commit of: %s" % p.relpath)
+          opt.rev_date = p.work_git.log(
+            '--pretty=format:%cd', '--date=iso',
+            '-n', '1', HEAD)
+          break
+
+    if opt.rev_date:
+      print ("Syncing on date: %s" % opt.rev_date)
+      for project in self.GetProjects(None, missing_ok=True):
+        project.lastRevisionDate = opt.rev_date
 
     syncbuf = SyncBuffer(mp.config,
                          detach_head = opt.detach_head)
